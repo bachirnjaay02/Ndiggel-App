@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm start *)",
+      "Read(//mnt/c/Users/HP/Desktop/**)",
+      "Bash(node node_modules/typescript/bin/tsc --noEmit)",
+      "Bash(npm run *)",
+      "Bash(\"c:\\\\Program Files\\\\nodejs\\\\npm.cmd\" install --legacy-peer-deps)",
+      "Bash(Get-Content \"C:\\\\Users\\\\HP\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-HP-Desktop-ndiggel-app\\\\4e56b0fc-f906-47a7-8831-236ad32beb2a\\\\tasks\\\\bsku8oep8.output\" -Wait -Tail 10)",
+      "Bash(Select-Object -First 30)",
+      "Bash(where node *)"
+    ]
+  }
+}
