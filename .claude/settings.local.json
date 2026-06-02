@@ -8,7 +8,8 @@
       "Bash(\"c:\\\\Program Files\\\\nodejs\\\\npm.cmd\" install --legacy-peer-deps)",
       "Bash(Get-Content \"C:\\\\Users\\\\HP\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-HP-Desktop-ndiggel-app\\\\4e56b0fc-f906-47a7-8831-236ad32beb2a\\\\tasks\\\\bsku8oep8.output\" -Wait -Tail 10)",
       "Bash(Select-Object -First 30)",
-      "Bash(where node *)"
+      "Bash(where node *)",
+      "PowerShell($env:PATH = \"C:\\\\Program Files\\\\nodejs;\" + $env:PATH; $env:CI = \"true\"; cd \"c:\\\\Users\\\\HP\\\\Desktop\\\\ndiggel-app\"; node_modules\\\\.bin\\\\react-scripts.cmd build 2>&1 | Select-Object -Last 60)"
     ]
   }
 }

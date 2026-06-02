@@ -1,3 +1,4 @@
+const webpush    = require('web-push');
 const { createClient } = require('@supabase/supabase-js');
 
 const MONTHS_FR = ['Janv', 'Févr', 'Mars', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sept', 'Oct', 'Nov', 'Déc'];
@@ -45,6 +46,43 @@ module.exports = async function handler(req, res) {
   await supabase.from('associations')
     .update({ auto_reminder_last_period: currentPeriod })
     .eq('id', associationId);
+
+  // Envoyer aussi les push notifications
+  if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+    try {
+      webpush.setVapidDetails(
+        `mailto:${process.env.VAPID_EMAIL || 'contact@ndiggel.app'}`,
+        process.env.VAPID_PUBLIC_KEY,
+        process.env.VAPID_PRIVATE_KEY,
+      );
+      const { data: subs } = await supabase
+        .from('push_subscriptions')
+        .select('endpoint, p256dh, auth')
+        .eq('association_id', associationId);
+
+      if (subs?.length) {
+        const payload = JSON.stringify({
+          title: `Rappel : Cotisation ${currentPeriod}`,
+          body:  message,
+          url:   '/member/notifications',
+        });
+        const expired = [];
+        await Promise.all(subs.map(async (sub) => {
+          try {
+            await webpush.sendNotification(
+              { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+              payload,
+            );
+          } catch (err) {
+            if (err.statusCode === 410 || err.statusCode === 404) expired.push(sub.endpoint);
+          }
+        }));
+        if (expired.length > 0) {
+          await supabase.from('push_subscriptions').delete().in('endpoint', expired);
+        }
+      }
+    } catch {}
+  }
 
   return res.status(200).json({ sent: true, period: currentPeriod });
 };

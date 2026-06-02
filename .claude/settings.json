@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($env:PATH = \"C:\\\\Program Files\\\\nodejs;\" + $env:PATH; cd \"c:\\\\Users\\\\HP\\\\Desktop\\\\ndiggel-app\"; npm install web-push --save 2>&1 | Select-Object -Last 10)"
+    ]
+  }
+}

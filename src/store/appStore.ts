@@ -301,6 +301,12 @@ export const useAppStore = create<AppState>((set, get) => ({
       .select().single();
     if (error) throw error;
     set(s => ({ notifications: [mapNotification(data), ...s.notifications] }));
+    // Envoyer le push (fire & forget)
+    fetch('/api/notifications/push-send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ associationId, title, body: message }),
+    }).catch(() => {});
   },
 
   deleteNotification: async (id) => {

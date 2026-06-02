@@ -454,3 +454,49 @@
   .member-layout { max-width: 540px; }
   .member-main { padding: 24px 24px 8px; }
 }
+
+/* ── Bannière permission push ── */
+.push-banner {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  color: #fff;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  animation: slideInLeft 0.35s ease;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.push-banner-icon { font-size: 20px; flex-shrink: 0; }
+.push-banner-text {
+  font-size: 12px;
+  line-height: 1.4;
+  opacity: 0.9;
+  flex: 1;
+  margin: 0;
+}
+.push-banner-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.push-banner-btn-yes {
+  background: var(--green);
+  color: #fff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: var(--r-sm);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.2s;
+}
+.push-banner-btn-yes:hover { opacity: 0.85; }
+.push-banner-btn-no {
+  background: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.7);
+  border: none;
+  padding: 6px 10px;
+  border-radius: var(--r-sm);
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.push-banner-btn-no:hover { background: rgba(255,255,255,0.18); }

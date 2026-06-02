@@ -272,3 +272,28 @@ do $$ begin
     create policy "allow_all_notifications" on notifications for all using (true) with check (true);
   end if;
 end $$;
+
+-- ─── 8. Abonnements Push ──────────────────────────────
+create table if not exists push_subscriptions (
+  id             uuid primary key default gen_random_uuid(),
+  association_id uuid references associations(id) on delete cascade not null,
+  member_id      uuid references members(id) on delete cascade not null,
+  endpoint       text not null,
+  p256dh         text not null,
+  auth           text not null,
+  created_at     timestamptz default now()
+);
+
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'push_subscriptions_endpoint_key') then
+    alter table push_subscriptions add constraint push_subscriptions_endpoint_key unique (endpoint);
+  end if;
+end $$;
+
+alter table push_subscriptions enable row level security;
+
+do $$ begin
+  if not exists (select 1 from pg_policies where policyname = 'allow_all_push_subscriptions') then
+    create policy "allow_all_push_subscriptions" on push_subscriptions for all using (true) with check (true);
+  end if;
+end $$;

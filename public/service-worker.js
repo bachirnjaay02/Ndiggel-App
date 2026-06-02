@@ -64,3 +64,33 @@ self.addEventListener('message', (event) => {
     self.skipWaiting();
   }
 });
+
+// ─── Push notifications ───────────────────────────────
+self.addEventListener('push', (event) => {
+  let data = { title: 'Ndiggël', body: '', url: '/member/notifications' };
+  try { data = { ...data, ...event.data.json() }; } catch {}
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body:    data.body,
+      icon:    '/logo192.png',
+      badge:   '/logo192.png',
+      tag:     'ndiggel-notif',
+      renotify: true,
+      data:    { url: data.url },
+    })
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url || '/member/notifications';
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+      for (const client of list) {
+        if ('focus' in client) return client.focus();
+      }
+      if (clients.openWindow) return clients.openWindow(url);
+    })
+  );
+});
