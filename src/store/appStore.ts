@@ -50,6 +50,13 @@ export interface Notification {
   createdAt: string;
 }
 
+export interface ReminderSettings {
+  enabled: boolean;
+  day: number;
+  message: string;
+  lastPeriod: string;
+}
+
 export type PlanKey = 'starter' | 'standard' | 'premium' | 'enterprise';
 
 export interface Subscription {
@@ -88,6 +95,7 @@ interface AppState {
   expenses: Expense[];
   savings: Saving[];
   notifications: Notification[];
+  reminderSettings: ReminderSettings;
   subscription: Subscription;
   monthlyCotisationAmount: number;
   currentPeriod: string;
@@ -111,6 +119,9 @@ interface AppState {
 
   sendNotification: (title: string, message: string, type: NotificationType, target: NotificationTarget) => Promise<void>;
   deleteNotification: (id: string) => Promise<void>;
+
+  updateReminderSettings: (settings: Partial<ReminderSettings>) => Promise<void>;
+  triggerAutoReminder: () => Promise<boolean>;
 
   updateMonthlyCotisationAmount: (amount: number) => void;
   applySubscriptionActivation: (plan: PlanKey) => void;
@@ -143,6 +154,15 @@ function mapNotification(row: any): Notification {
   return { id: row.id, title: row.title, message: row.message, type: row.type, target: row.target, createdAt: row.created_at };
 }
 
+function buildReminderSettings(row: any): ReminderSettings {
+  return {
+    enabled:    row?.auto_reminder_enabled    ?? false,
+    day:        row?.auto_reminder_day        ?? 5,
+    message:    row?.auto_reminder_message    ?? 'Bonjour, n\'oubliez pas de régler votre cotisation du mois. Merci !',
+    lastPeriod: row?.auto_reminder_last_period ?? '',
+  };
+}
+
 function buildSubscription(row: any): Subscription {
   const plan   = (row?.subscription_plan   ?? 'starter') as PlanKey;
   const status = (row?.subscription_status ?? 'trial')   as Subscription['status'];
@@ -154,6 +174,8 @@ function buildSubscription(row: any): Subscription {
   };
 }
 
+const DEFAULT_REMINDER: ReminderSettings = { enabled: false, day: 5, message: 'Bonjour, n\'oubliez pas de régler votre cotisation du mois. Merci !', lastPeriod: '' };
+
 export const useAppStore = create<AppState>((set, get) => ({
   associationId:          '',
   joinCode:               '',
@@ -162,6 +184,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   expenses:               [],
   savings:                [],
   notifications:          [],
+  reminderSettings:       DEFAULT_REMINDER,
   monthlyCotisationAmount: 5000,
   currentPeriod:          CURRENT_PERIOD,
   loading:                false,
@@ -177,7 +200,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       supabase.from('cotisations').select('*, members(name)').eq('association_id', associationId).order('created_at', { ascending: false }),
       supabase.from('expenses').select('*').eq('association_id', associationId).order('date', { ascending: false }),
       supabase.from('savings').select('*').eq('association_id', associationId).order('date', { ascending: false }),
-      supabase.from('associations').select('join_code, subscription_plan, subscription_status, subscription_expires_at').eq('id', associationId).single(),
+      supabase.from('associations').select('join_code, subscription_plan, subscription_status, subscription_expires_at, auto_reminder_enabled, auto_reminder_day, auto_reminder_message, auto_reminder_last_period').eq('id', associationId).single(),
       supabase.from('notifications').select('*').eq('association_id', associationId).order('created_at', { ascending: false }),
     ]);
 
@@ -186,10 +209,11 @@ export const useAppStore = create<AppState>((set, get) => ({
       cotisations:   (cotisRes.data    ?? []).map(mapCotisation),
       expenses:      (expRes.data      ?? []).map(mapExpense),
       savings:       (savRes.data      ?? []).map(mapSaving),
-      notifications: (notifRes.data    ?? []).map(mapNotification),
-      subscription:  buildSubscription(assocRes.data),
-      joinCode:      assocRes.data?.join_code ?? '',
-      loading:       false,
+      notifications:    (notifRes.data ?? []).map(mapNotification),
+      subscription:     buildSubscription(assocRes.data),
+      reminderSettings: buildReminderSettings(assocRes.data),
+      joinCode:         assocRes.data?.join_code ?? '',
+      loading:          false,
     });
   },
 
@@ -282,6 +306,45 @@ export const useAppStore = create<AppState>((set, get) => ({
   deleteNotification: async (id) => {
     await supabase.from('notifications').delete().eq('id', id);
     set(s => ({ notifications: s.notifications.filter(n => n.id !== id) }));
+  },
+
+  updateReminderSettings: async (settings) => {
+    const { associationId } = get();
+    const dbFields: Record<string, any> = {};
+    if ('enabled'    in settings) dbFields.auto_reminder_enabled     = settings.enabled;
+    if ('day'        in settings) dbFields.auto_reminder_day         = settings.day;
+    if ('message'    in settings) dbFields.auto_reminder_message     = settings.message;
+    if ('lastPeriod' in settings) dbFields.auto_reminder_last_period = settings.lastPeriod;
+    if (Object.keys(dbFields).length > 0) {
+      await supabase.from('associations').update(dbFields).eq('id', associationId);
+    }
+    set(s => ({ reminderSettings: { ...s.reminderSettings, ...settings } }));
+  },
+
+  triggerAutoReminder: async () => {
+    const { associationId, currentPeriod } = get();
+    try {
+      const res = await fetch('/api/notifications/auto-remind', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ associationId }),
+      });
+      const json = await res.json();
+      if (json.sent) {
+        const { data } = await supabase
+          .from('notifications').select('*')
+          .eq('association_id', associationId)
+          .order('created_at', { ascending: false });
+        set(s => ({
+          notifications:    (data ?? []).map(mapNotification),
+          reminderSettings: { ...s.reminderSettings, lastPeriod: currentPeriod },
+        }));
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
   },
 
   updateMonthlyCotisationAmount: (amount) => set({ monthlyCotisationAmount: amount }),

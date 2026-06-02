@@ -533,6 +533,48 @@
 
 .notif-actions { flex-shrink: 0; }
 
+/* ── Auto-reminder banner ── */
+.reminder-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: var(--r-lg);
+  margin-bottom: 22px;
+  box-shadow: var(--shadow-sm);
+  animation: slideInLeft 0.35s ease;
+  flex-wrap: wrap;
+}
+.reminder-banner-on  { background: linear-gradient(135deg, #f0fdf4, #d1fae5); border: 1.5px solid rgba(45,184,102,0.25); }
+.reminder-banner-off { background: var(--gray-50); border: 1.5px solid var(--gray-200); }
+.reminder-banner-left { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+.reminder-banner-icon { font-size: 18px; flex-shrink: 0; }
+.reminder-banner-title { font-size: 13px; font-weight: 700; color: var(--gray-900); margin: 0 0 2px; }
+.reminder-banner-sub   { font-size: 11px; color: var(--gray-500); margin: 0; }
+
+/* ── Toggle switch ── */
+.reminder-toggle {
+  width: 46px; height: 26px;
+  border-radius: var(--r-full);
+  background: var(--gray-200);
+  border: none; padding: 0;
+  position: relative; cursor: pointer;
+  transition: background 0.25s;
+  flex-shrink: 0;
+}
+.reminder-toggle.on { background: var(--green); }
+.reminder-toggle-thumb {
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  transition: transform 0.25s;
+}
+.reminder-toggle.on .reminder-toggle-thumb { transform: translateX(20px); }
+
 /* Notification type picker in modal */
 .notif-type-picker { display: flex; flex-direction: column; gap: 8px; }
 .notif-type-option {

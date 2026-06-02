@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
-import { useAppStore, PLAN_AMOUNTS, PLAN_LABELS, PLAN_LIMITS, PlanKey } from '../../store/appStore';
+import { useAppStore, PLAN_AMOUNTS, PLAN_LABELS, PLAN_LIMITS, PlanKey, ReminderSettings } from '../../store/appStore';
 import orangeMoneyImg from '../../assets/orange-money.png';
 import waveImg from '../../assets/wave.png';
 import './admin.css';
@@ -25,6 +25,8 @@ export default function SettingsScreen() {
     subscription, members, joinCode,
     monthlyCotisationAmount, updateMonthlyCotisationAmount,
     applySubscriptionActivation,
+    reminderSettings, updateReminderSettings, triggerAutoReminder,
+    currentPeriod,
   } = useAppStore();
 
   const [editCotis,  setEditCotis]  = useState(false);
@@ -34,6 +36,16 @@ export default function SettingsScreen() {
   const [paying,     setPaying]     = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
   const [toast,      setToast]      = useState('');
+
+  // Rappels auto
+  const [reminderDraft, setReminderDraft] = useState<ReminderSettings>(reminderSettings);
+  const [savingReminder, setSavingReminder] = useState(false);
+  const [sendingReminder, setSendingReminder] = useState(false);
+
+  // Sync draft when reminderSettings loads from Supabase
+  useEffect(() => {
+    setReminderDraft(reminderSettings);
+  }, [reminderSettings.enabled, reminderSettings.day, reminderSettings.message]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Show success toast when returning from PayTech
   useEffect(() => {
@@ -59,6 +71,20 @@ export default function SettingsScreen() {
     updateMonthlyCotisationAmount(val);
     setEditCotis(false);
     showToast('Montant de cotisation mis à jour');
+  };
+
+  const handleSaveReminder = async () => {
+    setSavingReminder(true);
+    await updateReminderSettings(reminderDraft);
+    setSavingReminder(false);
+    showToast('Paramètres de rappel sauvegardés ✅');
+  };
+
+  const handleSendReminderNow = async () => {
+    setSendingReminder(true);
+    const sent = await triggerAutoReminder();
+    setSendingReminder(false);
+    showToast(sent ? '🔔 Rappel envoyé avec succès !' : 'Rappel déjà envoyé pour ce mois.');
   };
 
   const handleCopyCode = () => {
@@ -226,6 +252,100 @@ export default function SettingsScreen() {
               <span className="settings-value">Mensuelle</span>
             </div>
           </>
+        )}
+      </div>
+
+      {/* ── Auto-reminder settings ── */}
+      <div className="settings-card">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <h3 className="settings-card-title" style={{ margin: 0 }}>🔔 Rappels automatiques</h3>
+          <button
+            className={`reminder-toggle ${reminderDraft.enabled ? 'on' : ''}`}
+            onClick={() => setReminderDraft(d => ({ ...d, enabled: !d.enabled }))}
+            type="button"
+            aria-label="Activer/désactiver les rappels automatiques"
+          >
+            <span className="reminder-toggle-thumb" />
+          </button>
+        </div>
+
+        {reminderDraft.enabled ? (
+          <>
+            <p style={{ fontSize: 12, color: 'var(--gray-500)', marginBottom: 16, lineHeight: 1.5 }}>
+              Un rappel in-app sera envoyé automatiquement aux membres n'ayant pas encore cotisé.
+            </p>
+
+            <div className="settings-row">
+              <span className="settings-key">Dernier rappel</span>
+              <span className="settings-value" style={{ fontSize: 13 }}>
+                {reminderSettings.lastPeriod || 'Jamais'}
+              </span>
+            </div>
+
+            <div className="form-group" style={{ marginTop: 16 }}>
+              <label className="form-label">Jour du mois pour l'envoi auto</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <input
+                  className="form-input"
+                  type="number"
+                  min={1} max={28}
+                  value={reminderDraft.day}
+                  onChange={e => setReminderDraft(d => ({ ...d, day: Math.min(28, Math.max(1, Number(e.target.value))) }))}
+                  style={{ width: 90 }}
+                />
+                <span style={{ fontSize: 13, color: 'var(--gray-500)' }}>
+                  de chaque mois (1 – 28)
+                </span>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Message du rappel</label>
+              <textarea
+                className="form-input"
+                style={{ minHeight: 80, resize: 'vertical' }}
+                value={reminderDraft.message}
+                onChange={e => setReminderDraft(d => ({ ...d, message: e.target.value }))}
+                maxLength={300}
+                placeholder="Votre message de rappel…"
+              />
+              <p style={{ fontSize: 11, color: 'var(--gray-400)', margin: '4px 0 0', textAlign: 'right' }}>
+                {reminderDraft.message.length}/300
+              </p>
+            </div>
+
+            <div className="modal-actions" style={{ marginTop: 4 }}>
+              <button
+                className="btn-ghost"
+                onClick={handleSendReminderNow}
+                disabled={sendingReminder}
+                style={{ fontSize: 13 }}
+              >
+                {sendingReminder ? 'Envoi…' : '📣 Envoyer maintenant'}
+              </button>
+              <button
+                className="btn-primary"
+                onClick={handleSaveReminder}
+                disabled={savingReminder}
+                style={{ fontSize: 13 }}
+              >
+                {savingReminder ? 'Sauvegarde…' : 'Enregistrer'}
+              </button>
+            </div>
+          </>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <p style={{ fontSize: 13, color: 'var(--gray-400)', margin: 0 }}>
+              Activez les rappels pour envoyer automatiquement une notification aux membres en retard de cotisation le jour configuré de chaque mois.
+            </p>
+            <button
+              className="btn-primary"
+              onClick={() => setReminderDraft(d => ({ ...d, enabled: true }))}
+              style={{ alignSelf: 'flex-start', fontSize: 13 }}
+            >
+              Activer les rappels
+            </button>
+          </div>
         )}
       </div>
 

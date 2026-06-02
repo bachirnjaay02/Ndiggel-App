@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { useAppStore } from '../../store/appStore';
@@ -26,8 +26,32 @@ function greeting() {
 export default function DashboardScreen() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const { members, cotisations, expenses, savings, subscription, currentPeriod, markMemberPaid } = useAppStore();
-  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const { members, cotisations, expenses, savings, subscription, currentPeriod, markMemberPaid, reminderSettings, triggerAutoReminder } = useAppStore();
+  const [confirmId, setConfirmId]       = useState<string | null>(null);
+  const [toast, setToast]               = useState('');
+  const [sendingReminder, setSendingReminder] = useState(false);
+  const autoTriggered = useRef(false);
+
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 4000); };
+
+  // Auto-trigger reminder once per session if conditions met
+  useEffect(() => {
+    if (autoTriggered.current) return;
+    if (!reminderSettings.enabled) return;
+    if (reminderSettings.lastPeriod === currentPeriod) return;
+    if (new Date().getDate() < reminderSettings.day) return;
+    autoTriggered.current = true;
+    triggerAutoReminder().then(sent => {
+      if (sent) showToast('🔔 Rappel de cotisation envoyé automatiquement !');
+    });
+  }, [reminderSettings, currentPeriod]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleSendReminder = async () => {
+    setSendingReminder(true);
+    const sent = await triggerAutoReminder();
+    setSendingReminder(false);
+    showToast(sent ? '🔔 Rappel envoyé aux membres en attente !' : 'Rappel déjà envoyé pour ' + currentPeriod + '.');
+  };
 
   const activeMembers = members.filter(m => m.status === 'active');
   const currentCotisations = cotisations.filter(c => c.period === currentPeriod);
@@ -48,6 +72,7 @@ export default function DashboardScreen() {
 
   return (
     <div className="screen">
+      {toast && <div className="toast">{toast}</div>}
       <div className="screen-header">
         <div>
           <h1 className="screen-title">Tableau de bord</h1>
@@ -113,7 +138,17 @@ export default function DashboardScreen() {
         <div className="section">
           <div className="section-header">
             <h2 className="section-title">À relancer</h2>
-            <span className="badge badge-pending">{pendingMembers.length}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span className="badge badge-pending">{pendingMembers.length}</span>
+              <button
+                className="btn-xs btn-xs-outline"
+                onClick={handleSendReminder}
+                disabled={sendingReminder || reminderSettings.lastPeriod === currentPeriod}
+                title={reminderSettings.lastPeriod === currentPeriod ? 'Rappel déjà envoyé ce mois' : 'Envoyer un rappel à tous les membres en attente'}
+              >
+                {sendingReminder ? '…' : reminderSettings.lastPeriod === currentPeriod ? '✅ Rappelé' : '🔔 Rappeler'}
+              </button>
+            </div>
           </div>
           <div className="list-card">
             {pendingMembers.map(member => {

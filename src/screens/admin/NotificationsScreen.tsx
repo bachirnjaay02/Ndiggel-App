@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/appStore';
 import type { NotificationType, NotificationTarget } from '../../store/appStore';
 import './admin.css';
@@ -21,9 +22,14 @@ function fmtDate(d: string) {
 }
 
 export default function NotificationsScreen() {
-  const { notifications, sendNotification, deleteNotification } = useAppStore();
+  const navigate = useNavigate();
+  const {
+    notifications, sendNotification, deleteNotification,
+    reminderSettings, triggerAutoReminder, currentPeriod,
+  } = useAppStore();
 
   const [showModal, setShowModal]         = useState(false);
+  const [sendingQuick, setSendingQuick]   = useState(false);
   const [type, setType]                   = useState<NotificationType>('reminder');
   const [target, setTarget]               = useState<NotificationTarget>('all');
   const [title, setTitle]                 = useState('');
@@ -73,8 +79,16 @@ export default function NotificationsScreen() {
     showToast('Notification supprimée.');
   };
 
+  const handleQuickReminder = async () => {
+    setSendingQuick(true);
+    const sent = await triggerAutoReminder();
+    setSendingQuick(false);
+    showToast(sent ? '🔔 Rappel envoyé aux membres en attente !' : 'Rappel déjà envoyé pour ' + currentPeriod + '.');
+  };
+
   const reminderCount = notifications.filter(n => n.type === 'reminder').length;
   const otherCount    = notifications.filter(n => n.type !== 'reminder').length;
+  const alreadySentThisPeriod = reminderSettings.lastPeriod === currentPeriod;
 
   return (
     <div className="screen">
@@ -108,6 +122,38 @@ export default function NotificationsScreen() {
           <p className="stat-label">Annonces & Infos</p>
           <p className="stat-value">{otherCount}</p>
           <p className="stat-sub">envoyées</p>
+        </div>
+      </div>
+
+      {/* Auto-reminder banner */}
+      <div className={`reminder-banner ${reminderSettings.enabled ? 'reminder-banner-on' : 'reminder-banner-off'}`}>
+        <div className="reminder-banner-left">
+          <span className="reminder-banner-icon">{reminderSettings.enabled ? '🟢' : '⚪'}</span>
+          <div>
+            <p className="reminder-banner-title">
+              Rappels automatiques {reminderSettings.enabled ? 'activés' : 'désactivés'}
+            </p>
+            <p className="reminder-banner-sub">
+              {reminderSettings.enabled
+                ? `Envoi le ${reminderSettings.day} de chaque mois · ${alreadySentThisPeriod ? `Déjà envoyé (${currentPeriod})` : 'Pas encore envoyé ce mois'}`
+                : 'Configurez les rappels dans les Paramètres'}
+            </p>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+          {reminderSettings.enabled && (
+            <button
+              className="btn-xs btn-xs-green"
+              onClick={handleQuickReminder}
+              disabled={sendingQuick || alreadySentThisPeriod}
+              title={alreadySentThisPeriod ? 'Déjà envoyé ce mois' : 'Envoyer le rappel maintenant'}
+            >
+              {sendingQuick ? '…' : alreadySentThisPeriod ? '✅ Envoyé' : '📣 Rappel'}
+            </button>
+          )}
+          <button className="btn-xs btn-xs-outline" onClick={() => navigate('/admin/settings')}>
+            ⚙️ Configurer
+          </button>
         </div>
       </div>
 

@@ -23,6 +23,12 @@ alter table associations add column if not exists subscription_plan       text d
 alter table associations add column if not exists subscription_status     text default 'trial';
 alter table associations add column if not exists subscription_expires_at timestamptz default (now() + interval '30 days');
 
+-- Colonnes rappels automatiques
+alter table associations add column if not exists auto_reminder_enabled    boolean default false;
+alter table associations add column if not exists auto_reminder_day        integer default 5;
+alter table associations add column if not exists auto_reminder_message    text    default 'Bonjour, n''oubliez pas de régler votre cotisation du mois. Merci !';
+alter table associations add column if not exists auto_reminder_last_period text;
+
 -- Générer un join_code pour les associations qui n'en ont pas
 update associations
 set join_code = upper(substring(gen_random_uuid()::text, 1, 6))
