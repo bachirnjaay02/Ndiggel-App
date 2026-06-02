@@ -26,7 +26,6 @@ export default function SettingsScreen() {
     monthlyCotisationAmount, updateMonthlyCotisationAmount,
     applySubscriptionActivation,
     reminderSettings, updateReminderSettings, triggerAutoReminder,
-    currentPeriod,
   } = useAppStore();
 
   const [editCotis,  setEditCotis]  = useState(false);
