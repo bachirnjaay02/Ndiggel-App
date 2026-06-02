@@ -233,3 +233,36 @@ do $$ begin
     create policy "allow_all_subscription_payments" on subscription_payments for all using (true) with check (true);
   end if;
 end $$;
+
+-- ─── 7. Notifications ─────────────────────────────────
+create table if not exists notifications (
+  id             uuid primary key default gen_random_uuid(),
+  association_id uuid references associations(id) on delete cascade not null,
+  title          text not null,
+  message        text not null,
+  type           text default 'info',
+  target         text default 'all',
+  created_at     timestamptz default now()
+);
+
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'notifications_type_check') then
+    alter table notifications add constraint notifications_type_check
+      check (type in ('reminder','update','info'));
+  end if;
+end $$;
+
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'notifications_target_check') then
+    alter table notifications add constraint notifications_target_check
+      check (target in ('all','pending'));
+  end if;
+end $$;
+
+alter table notifications enable row level security;
+
+do $$ begin
+  if not exists (select 1 from pg_policies where policyname = 'allow_all_notifications') then
+    create policy "allow_all_notifications" on notifications for all using (true) with check (true);
+  end if;
+end $$;

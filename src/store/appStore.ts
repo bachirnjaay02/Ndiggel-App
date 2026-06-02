@@ -3,6 +3,8 @@ import { supabase } from '../lib/supabase';
 
 export type PaymentMethod = 'orange_money' | 'wave' | 'cash';
 export type PaymentStatus = 'paid' | 'pending' | 'late';
+export type NotificationType = 'reminder' | 'update' | 'info';
+export type NotificationTarget = 'all' | 'pending';
 
 export interface Member {
   id: string;
@@ -37,6 +39,15 @@ export interface Saving {
   amount: number;
   date: string;
   type: 'deposit' | 'withdrawal';
+}
+
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: NotificationType;
+  target: NotificationTarget;
+  createdAt: string;
 }
 
 export type PlanKey = 'starter' | 'standard' | 'premium' | 'enterprise';
@@ -76,6 +87,7 @@ interface AppState {
   cotisations: Cotisation[];
   expenses: Expense[];
   savings: Saving[];
+  notifications: Notification[];
   subscription: Subscription;
   monthlyCotisationAmount: number;
   currentPeriod: string;
@@ -96,6 +108,9 @@ interface AppState {
 
   addSaving: (description: string, amount: number, type: 'deposit' | 'withdrawal') => Promise<void>;
   deleteSaving: (id: string) => Promise<void>;
+
+  sendNotification: (title: string, message: string, type: NotificationType, target: NotificationTarget) => Promise<void>;
+  deleteNotification: (id: string) => Promise<void>;
 
   updateMonthlyCotisationAmount: (amount: number) => void;
   applySubscriptionActivation: (plan: PlanKey) => void;
@@ -124,6 +139,9 @@ function mapExpense(row: any): Expense {
 function mapSaving(row: any): Saving {
   return { id: row.id, description: row.description, amount: row.amount, date: row.date, type: row.type };
 }
+function mapNotification(row: any): Notification {
+  return { id: row.id, title: row.title, message: row.message, type: row.type, target: row.target, createdAt: row.created_at };
+}
 
 function buildSubscription(row: any): Subscription {
   const plan   = (row?.subscription_plan   ?? 'starter') as PlanKey;
@@ -143,6 +161,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   cotisations:            [],
   expenses:               [],
   savings:                [],
+  notifications:          [],
   monthlyCotisationAmount: 5000,
   currentPeriod:          CURRENT_PERIOD,
   loading:                false,
@@ -153,22 +172,24 @@ export const useAppStore = create<AppState>((set, get) => ({
   fetchAll: async (associationId) => {
     set({ loading: true, associationId });
 
-    const [membersRes, cotisRes, expRes, savRes, assocRes] = await Promise.all([
+    const [membersRes, cotisRes, expRes, savRes, assocRes, notifRes] = await Promise.all([
       supabase.from('members').select('*').eq('association_id', associationId).order('joined_at'),
       supabase.from('cotisations').select('*, members(name)').eq('association_id', associationId).order('created_at', { ascending: false }),
       supabase.from('expenses').select('*').eq('association_id', associationId).order('date', { ascending: false }),
       supabase.from('savings').select('*').eq('association_id', associationId).order('date', { ascending: false }),
       supabase.from('associations').select('join_code, subscription_plan, subscription_status, subscription_expires_at').eq('id', associationId).single(),
+      supabase.from('notifications').select('*').eq('association_id', associationId).order('created_at', { ascending: false }),
     ]);
 
     set({
-      members:     (membersRes.data  ?? []).map(mapMember),
-      cotisations: (cotisRes.data    ?? []).map(mapCotisation),
-      expenses:    (expRes.data      ?? []).map(mapExpense),
-      savings:     (savRes.data      ?? []).map(mapSaving),
-      subscription: buildSubscription(assocRes.data),
-      joinCode:    assocRes.data?.join_code ?? '',
-      loading:     false,
+      members:       (membersRes.data  ?? []).map(mapMember),
+      cotisations:   (cotisRes.data    ?? []).map(mapCotisation),
+      expenses:      (expRes.data      ?? []).map(mapExpense),
+      savings:       (savRes.data      ?? []).map(mapSaving),
+      notifications: (notifRes.data    ?? []).map(mapNotification),
+      subscription:  buildSubscription(assocRes.data),
+      joinCode:      assocRes.data?.join_code ?? '',
+      loading:       false,
     });
   },
 
@@ -247,6 +268,20 @@ export const useAppStore = create<AppState>((set, get) => ({
   deleteSaving: async (id) => {
     await supabase.from('savings').delete().eq('id', id);
     set(s => ({ savings: s.savings.filter(sv => sv.id !== id) }));
+  },
+
+  sendNotification: async (title, message, type, target) => {
+    const { associationId } = get();
+    const { data, error } = await supabase.from('notifications')
+      .insert({ association_id: associationId, title, message, type, target })
+      .select().single();
+    if (error) throw error;
+    set(s => ({ notifications: [mapNotification(data), ...s.notifications] }));
+  },
+
+  deleteNotification: async (id) => {
+    await supabase.from('notifications').delete().eq('id', id);
+    set(s => ({ notifications: s.notifications.filter(n => n.id !== id) }));
   },
 
   updateMonthlyCotisationAmount: (amount) => set({ monthlyCotisationAmount: amount }),

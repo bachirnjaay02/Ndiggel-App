@@ -6,10 +6,11 @@ import AppLogo from '../../assets/AppLogo';
 import './layouts.css';
 
 const navItems = [
-  { to: '/admin',          label: 'Tableau de bord', icon: '🏠', end: true },
-  { to: '/admin/members',  label: 'Membres',          icon: '👥' },
-  { to: '/admin/finance',  label: 'Finances',          icon: '💰' },
-  { to: '/admin/settings', label: 'Paramètres',        icon: '⚙️' },
+  { to: '/admin',                  label: 'Tableau de bord', icon: '🏠', end: true },
+  { to: '/admin/members',          label: 'Membres',          icon: '👥' },
+  { to: '/admin/finance',          label: 'Finances',          icon: '💰' },
+  { to: '/admin/notifications',    label: 'Alertes',           icon: '🔔' },
+  { to: '/admin/settings',         label: 'Paramètres',        icon: '⚙️' },
 ];
 
 export default function AdminLayout() {

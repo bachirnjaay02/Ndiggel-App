@@ -580,6 +580,50 @@
 /* Badge variants in member screens */
 .badge-paid { background: #d1fae5; color: #065f46; }
 
+/* ══════════════════════════════════════
+   NOTIFICATIONS (Member)
+══════════════════════════════════════ */
+.m-notif-list { display: flex; flex-direction: column; gap: 12px; }
+
+.m-notif-item {
+  background: #fff;
+  border-radius: var(--r-lg);
+  padding: 16px;
+  box-shadow: var(--shadow-md);
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  border-left: 4px solid var(--gray-200);
+  animation: slideInLeft 0.3s ease both;
+}
+.m-notif-item.m-notif-reminder { border-left-color: var(--warning); }
+.m-notif-item.m-notif-update   { border-left-color: var(--green); }
+.m-notif-item.m-notif-info     { border-left-color: #3b82f6; }
+
+.m-notif-icon {
+  width: 42px; height: 42px;
+  border-radius: var(--r-md);
+  background: var(--gray-100);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0;
+}
+.m-notif-reminder .m-notif-icon { background: #fef3c7; }
+.m-notif-update   .m-notif-icon { background: #d1fae5; }
+.m-notif-info     .m-notif-icon { background: #dbeafe; }
+
+.m-notif-body    { flex: 1; min-width: 0; }
+.m-notif-title   { font-size: 14px; font-weight: 700; color: var(--gray-900); margin: 0; }
+.m-notif-message { font-size: 13px; color: var(--gray-600); margin: 0 0 6px; line-height: 1.55; }
+.m-notif-date    { font-size: 11px; color: var(--gray-400); margin: 0; }
+
+.m-notif-badge {
+  padding: 2px 8px; border-radius: var(--r-full);
+  font-size: 10px; font-weight: 700; white-space: nowrap; flex-shrink: 0;
+}
+.m-notif-badge-reminder { background: #fef3c7; color: #92400e; }
+.m-notif-badge-update   { background: #d1fae5; color: #065f46; }
+.m-notif-badge-info     { background: #dbeafe; color: #1e40af; }
+
 @media (max-width: 360px) {
   .pin-inputs { gap: 10px; }
   .pin-input  { width: 50px; height: 58px; font-size: 20px; }

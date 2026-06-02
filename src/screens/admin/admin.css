@@ -484,6 +484,74 @@
 }
 
 /* ══════════════════════════════════════
+   NOTIFICATIONS (Admin)
+══════════════════════════════════════ */
+.notif-list { display: flex; flex-direction: column; gap: 12px; }
+
+.notif-item {
+  background: #fff;
+  border-radius: var(--r-lg);
+  padding: 18px;
+  box-shadow: var(--shadow-md);
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  border-left: 4px solid var(--gray-200);
+  animation: slideInLeft 0.3s ease both;
+  transition: box-shadow 0.2s;
+}
+.notif-item:hover { box-shadow: var(--shadow-lg); }
+.notif-item.notif-reminder { border-left-color: var(--warning); }
+.notif-item.notif-update   { border-left-color: var(--green); }
+.notif-item.notif-info     { border-left-color: #3b82f6; }
+
+.notif-icon-wrap {
+  width: 44px; height: 44px;
+  border-radius: var(--r-md);
+  background: var(--gray-100);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0;
+}
+.notif-reminder .notif-icon-wrap { background: #fef3c7; }
+.notif-update   .notif-icon-wrap { background: #d1fae5; }
+.notif-info     .notif-icon-wrap { background: #dbeafe; }
+
+.notif-body { flex: 1; min-width: 0; }
+.notif-row  { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 5px; flex-wrap: wrap; }
+.notif-title   { font-size: 14px; font-weight: 700; color: var(--gray-900); margin: 0; }
+.notif-message { font-size: 13px; color: var(--gray-600); margin: 0 0 8px; line-height: 1.55; }
+.notif-meta    { font-size: 11px; color: var(--gray-400); display: flex; gap: 6px; flex-wrap: wrap; }
+
+.notif-type-badge {
+  display: inline-flex; align-items: center;
+  padding: 2px 9px; border-radius: var(--r-full);
+  font-size: 10px; font-weight: 700; white-space: nowrap; flex-shrink: 0;
+}
+.notif-type-reminder { background: #fef3c7; color: #92400e; }
+.notif-type-update   { background: #d1fae5; color: #065f46; }
+.notif-type-info     { background: #dbeafe; color: #1e40af; }
+
+.notif-actions { flex-shrink: 0; }
+
+/* Notification type picker in modal */
+.notif-type-picker { display: flex; flex-direction: column; gap: 8px; }
+.notif-type-option {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 14px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--r-md);
+  background: var(--gray-50);
+  cursor: pointer; font-size: 13px; font-weight: 600;
+  text-align: left; transition: all 0.2s;
+}
+.notif-type-option:hover { border-color: var(--green); background: var(--green-light); }
+.notif-type-option.active {
+  border-color: var(--green);
+  background: linear-gradient(135deg, var(--green-light), var(--purple-light));
+  color: var(--green-dark); font-weight: 700;
+}
+
+/* ══════════════════════════════════════
    NEW DYNAMIC STYLES
 ══════════════════════════════════════ */
 

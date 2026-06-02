@@ -7,10 +7,12 @@ import DashboardScreen from './screens/admin/DashboardScreen';
 import MembersScreen from './screens/admin/MembersScreen';
 import FinanceScreen from './screens/admin/FinanceScreen';
 import SettingsScreen from './screens/admin/SettingsScreen';
+import AdminNotificationsScreen from './screens/admin/NotificationsScreen';
 import HomeScreen from './screens/member/HomeScreen';
 import PayScreen from './screens/member/PayScreen';
 import HistoryScreen from './screens/member/HistoryScreen';
 import ProfileScreen from './screens/member/ProfileScreen';
+import MemberNotificationsScreen from './screens/member/NotificationsScreen';
 
 export default function App() {
   return (
@@ -20,15 +22,17 @@ export default function App() {
         <Route path="/register" element={<RegisterScreen />} />
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<DashboardScreen />} />
-          <Route path="members"  element={<MembersScreen />} />
-          <Route path="finance"  element={<FinanceScreen />} />
-          <Route path="settings" element={<SettingsScreen />} />
+          <Route path="members"       element={<MembersScreen />} />
+          <Route path="finance"       element={<FinanceScreen />} />
+          <Route path="notifications" element={<AdminNotificationsScreen />} />
+          <Route path="settings"      element={<SettingsScreen />} />
         </Route>
         <Route path="/member" element={<MemberLayout />}>
           <Route index element={<HomeScreen />} />
-          <Route path="pay"     element={<PayScreen />} />
-          <Route path="history" element={<HistoryScreen />} />
-          <Route path="profile" element={<ProfileScreen />} />
+          <Route path="pay"           element={<PayScreen />} />
+          <Route path="history"       element={<HistoryScreen />} />
+          <Route path="notifications" element={<MemberNotificationsScreen />} />
+          <Route path="profile"       element={<ProfileScreen />} />
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>

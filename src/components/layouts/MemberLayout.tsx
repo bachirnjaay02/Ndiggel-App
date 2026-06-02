@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { Outlet, NavLink } from 'react-router-dom';
+import { useEffect, useMemo } from 'react';
+import { Outlet, NavLink, Link } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { useAppStore } from '../../store/appStore';
 import AppLogo from '../../assets/AppLogo';
@@ -14,11 +14,26 @@ const navItems = [
 
 export default function MemberLayout() {
   const { user } = useAuthStore();
-  const { fetchAll } = useAppStore();
+  const { fetchAll, notifications, cotisations, currentPeriod } = useAppStore();
 
   useEffect(() => {
     if (user?.associationId) fetchAll(user.associationId);
   }, [user?.associationId, fetchAll]);
+
+  const isPaid = cotisations.some(
+    c => c.memberId === user?.id && c.period === currentPeriod && c.status === 'paid'
+  );
+
+  const unreadCount = useMemo(() => {
+    const readIds: string[] = (() => {
+      try { return JSON.parse(localStorage.getItem(`read_notifs_${user?.id}`) ?? '[]'); }
+      catch { return []; }
+    })();
+    return notifications.filter(n => {
+      if (n.target === 'pending' && isPaid) return false;
+      return !readIds.includes(n.id);
+    }).length;
+  }, [notifications, isPaid, user?.id]);
 
   return (
     <div className="member-layout">
@@ -28,7 +43,12 @@ export default function MemberLayout() {
           <AppLogo size={30} showText={false} />
           <span className="member-header-name">Ndiggël App</span>
         </div>
-        <div className="member-header-notif">🔔</div>
+        <Link to="/member/notifications" className="member-header-notif">
+          🔔
+          {unreadCount > 0 && (
+            <span className="notif-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
+          )}
+        </Link>
       </header>
 
       {/* Content */}
